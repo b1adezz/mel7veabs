@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { storage } from './utils/storage';
 import LoginPage from './components/LoginPage';
-import Navigation from './components/Navigation';
+import HamburgerMenu from './components/HamburgerMenu';
 import HomePage from './components/HomePage';
 import VideoLibrary from './components/VideoLibrary';
 import VideoUpload from './components/VideoUpload';
 import VideoIdeas from './components/VideoIdeas';
+import SparklingBackground from './components/SparklingBackground';
 import { Video, VideoIdea } from './types';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentPage, setCurrentPage] = useState('home');
   const [videos, setVideos] = useState<Video[]>([]);
   const [ideas, setIdeas] = useState<VideoIdea[]>([]);
 
@@ -28,7 +29,6 @@ function App() {
   const handleLogout = () => {
     storage.logout();
     setIsAuthenticated(false);
-    setCurrentPage('home');
   };
 
   const handleUploadVideo = (videoData: {
@@ -44,7 +44,6 @@ function App() {
     };
     storage.addVideo(newVideo);
     setVideos(storage.getVideos());
-    setCurrentPage('library');
   };
 
   const handleDeleteVideo = (id: string) => {
@@ -77,41 +76,27 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navigation
-        currentPage={currentPage}
-        onNavigate={setCurrentPage}
-        onLogout={handleLogout}
-      />
+    <Router basename={import.meta.env.BASE_URL}>
+      <div className="relative min-h-screen bg-gradient-to-br from-gray-900 to-black">
+        <SparklingBackground />
+        <HamburgerMenu onLogout={handleLogout} />
 
-      {currentPage === 'home' && (
-        <HomePage
-          onNavigate={setCurrentPage}
-          videoCount={videos.length}
-          ideaCount={ideas.length}
-        />
-      )}
-
-      {currentPage === 'library' && (
-        <VideoLibrary
-          videos={videos}
-          onDeleteVideo={handleDeleteVideo}
-        />
-      )}
-
-      {currentPage === 'upload' && (
-        <VideoUpload onUpload={handleUploadVideo} />
-      )}
-
-      {currentPage === 'ideas' && (
-        <VideoIdeas
-          ideas={ideas}
-          onAddIdea={handleAddIdea}
-          onUpdateIdea={handleUpdateIdea}
-          onDeleteIdea={handleDeleteIdea}
-        />
-      )}
-    </div>
+        <Routes>
+          <Route path="/home" element={<HomePage videoCount={videos.length} ideaCount={ideas.length} />} />
+          <Route path="/videos" element={<VideoLibrary videos={videos} onDeleteVideo={handleDeleteVideo} />} />
+          <Route path="/upload" element={<VideoUpload onUpload={handleUploadVideo} />} />
+          <Route path="/ideas" element={
+            <VideoIdeas
+              ideas={ideas}
+              onAddIdea={handleAddIdea}
+              onUpdateIdea={handleUpdateIdea}
+              onDeleteIdea={handleDeleteIdea}
+            />
+          } />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
